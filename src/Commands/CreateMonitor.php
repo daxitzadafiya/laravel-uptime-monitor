@@ -4,6 +4,7 @@ namespace Spatie\UptimeMonitor\Commands;
 
 use Spatie\UptimeMonitor\Models\Monitor;
 use Spatie\Url\Url;
+use Illuminate\Support\Facades\Auth;
 
 class CreateMonitor extends BaseCommand
 {
@@ -26,6 +27,7 @@ class CreateMonitor extends BaseCommand
         }
 
         $monitor = Monitor::create([
+            'user_id' => Auth::check() ? Auth::id() : Null,
             'url' => trim($url, '/'),
             'look_for_string' => $lookForString ?? '',
             'uptime_check_method' => isset($lookForString) ? 'get' : 'head',

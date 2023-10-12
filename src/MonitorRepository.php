@@ -8,12 +8,13 @@ use Spatie\UptimeMonitor\Exceptions\InvalidConfiguration;
 use Spatie\UptimeMonitor\Models\Enums\CertificateStatus;
 use Spatie\UptimeMonitor\Models\Enums\UptimeStatus;
 use Spatie\UptimeMonitor\Models\Monitor;
+use Illuminate\Support\Facades\Auth;
 
 class MonitorRepository
 {
     public static function getEnabled(): Collection
     {
-        $monitors = self::query()->get();
+        $monitors = self::query()->where('user_id', Auth::id())->get();
 
         return MonitorCollection::make($monitors)->sortByHost();
     }
@@ -23,6 +24,7 @@ class MonitorRepository
         $modelClass = static::determineMonitorModel();
 
         $monitors = $modelClass::where('uptime_check_enabled', false)
+            ->where('user_id', Auth::id())
             ->where('certificate_check_enabled', false)
             ->get();
 
@@ -31,7 +33,7 @@ class MonitorRepository
 
     public static function getForUptimeCheck(): MonitorCollection
     {
-        $monitors = self::query()->get()->filter->shouldCheckUptime();
+        $monitors = self::query()->where('user_id', Auth::id())->get()->filter->shouldCheckUptime();
 
         return MonitorCollection::make($monitors)->sortByHost();
     }
@@ -39,6 +41,7 @@ class MonitorRepository
     public static function getForCertificateCheck(): Collection
     {
         $monitors = self::query()
+            ->where('user_id', Auth::id())
             ->where('certificate_check_enabled', true)
             ->get();
 
@@ -47,7 +50,7 @@ class MonitorRepository
 
     public static function getHealthy(): Collection
     {
-        $monitors = self::query()->get()->filter->isHealthy();
+        $monitors = self::query()->where('user_id', Auth::id())->get()->filter->isHealthy();
 
         return MonitorCollection::make($monitors)->sortByHost();
     }
@@ -55,6 +58,7 @@ class MonitorRepository
     public static function getWithFailingUptimeCheck(): Collection
     {
         $monitors = self::query()
+            ->where('user_id', Auth::id())
             ->where('uptime_check_enabled', true)
             ->where('uptime_status', UptimeStatus::DOWN)
             ->get();
@@ -65,6 +69,7 @@ class MonitorRepository
     public static function getWithFailingCertificateCheck(): Collection
     {
         $monitors = self::query()
+            ->where('user_id', Auth::id())
             ->where('certificate_check_enabled', true)
             ->where('certificate_status', CertificateStatus::INVALID)
             ->get();
@@ -74,7 +79,7 @@ class MonitorRepository
 
     public static function getUnhealthy(): Collection
     {
-        $monitors = self::query()->get()->reject->isHealthy();
+        $monitors = self::query()->where('user_id', Auth::id())->get()->reject->isHealthy();
 
         return MonitorCollection::make($monitors)->sortByHost();
     }
@@ -85,6 +90,7 @@ class MonitorRepository
 
         $monitors = $modelClass::where(function (Builder $query) {
             $query
+                    ->where('user_id', Auth::id())
                     ->where('uptime_check_enabled', true)
                     ->where('uptime_status', UptimeStatus::NOT_YET_CHECKED);
         })
