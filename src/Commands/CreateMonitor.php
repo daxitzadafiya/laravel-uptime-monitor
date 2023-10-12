@@ -8,12 +8,17 @@ use Illuminate\Support\Facades\Auth;
 
 class CreateMonitor extends BaseCommand
 {
-    protected $signature = 'monitor:create {url}';
+    protected $signature = 'monitor:create {url} {user_id}';
 
     protected $description = 'Create a monitor';
 
     public function handle()
     {
+        if(Auth::check() && $this->argument('user_id')) {
+            Auth::logout();
+        }
+        Auth::loginUsingId($this->argument('user_id'));
+
         $url = Url::fromString($this->argument('url'));
 
         if (! in_array($url->getScheme(), ['http', 'https'])) {
