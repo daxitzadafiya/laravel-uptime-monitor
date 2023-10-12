@@ -4,22 +4,21 @@ namespace Spatie\UptimeMonitor\Commands;
 
 use Spatie\UptimeMonitor\Models\Monitor;
 use Spatie\Url\Url;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class CreateMonitor extends BaseCommand
 {
-    protected $signature = 'monitor:create {url} {user_id}';
+    protected $signature = 'monitor:create {url} {look_for_string} {user_id}';
 
     protected $description = 'Create a monitor';
 
     public function handle()
     {
-        if(Auth::check() && $this->argument('user_id')) {
-            Auth::logout();
-        }
-        Auth::loginUsingId($this->argument('user_id'));
+        Session::put('user_id', $this->argument('user_id'));
 
         $url = Url::fromString($this->argument('url'));
+
+        $lookForString = $this->argument('look_for_string');
 
         if (! in_array($url->getScheme(), ['http', 'https'])) {
             if ($scheme = $this->choice("Which protocol needs to be used for checking `{$url}`?", [1 => 'https', 2 => 'http'], 1)) {
@@ -27,12 +26,8 @@ class CreateMonitor extends BaseCommand
             }
         }
 
-        if ($this->confirm('Should we look for a specific string on the response?')) {
-            $lookForString = $this->ask('Which string?');
-        }
-
         $monitor = Monitor::create([
-            'user_id' => Auth::check() ? Auth::id() : Null,
+            'user_id' => Session::has('user_id') ? Session::get('user_id') : Null,
             'url' => trim($url, '/'),
             'look_for_string' => $lookForString ?? '',
             'uptime_check_method' => isset($lookForString) ? 'get' : 'head',
